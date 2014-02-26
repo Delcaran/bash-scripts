@@ -1,0 +1,10 @@
+#!/bin/zsh
+sleep 333
+pgrep actkbd
+if [ $? -ne 0 ] 
+then
+    EXEC=(/usr/sbin/actkbd -d /dev/input/by-id/usb-Microsoft_Microsoft®_2.4GHz_Transceiver_v7.0-event-kbd -D)
+    exec $EXEC
+    #echo "log" > /home/delcaran/log"
+fi
+exit 0
