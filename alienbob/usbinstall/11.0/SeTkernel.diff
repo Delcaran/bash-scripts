@@ -1,0 +1,25 @@
+--- SeTkernel.org	2006-09-21 08:48:47.000000000 +0200
++++ SeTkernel	2006-09-25 13:08:32.000000000 +0200
+@@ -39,7 +39,7 @@
+ installed already (which will be the generic kernel from \
+ the A series).  Which option would you like?" 19 73 4 \
+ "bootdisk" "Use the kernel from the installation bootdisk" \
+-"cdrom" "Use a kernel from the Slackware CD or NFS mount" \
++"cdrom" "Use a kernel from the Slackware CD, USB stick or NFS" \
+ "floppy" "Install a zimage or bzimage from a DOS floppy" \
+ "skip" "Skip this menu (use the default $KERNEL)" 2> $TMP/SeTreturn
+  if [ ! $? = 0 ]; then
+@@ -74,8 +74,11 @@
+ hit ENTER to return to the kernel installation menu." 8 70
+   fi 
+  elif [ "`cat $TMP/SeTreturn`" = "cdrom" ]; then
+-  # This assumes symlinks /nfs and /cdrom both pointing to /var/log/mount :
+-  if `mount |grep -q "type nfs"`; then PLINK=nfs; else PLINK=cdrom; fi
++  # This assumes symlinks /nfs /disk and /cdrom pointing to /var/log/mount :
++  if `mount |grep -q "type nfs"`; then PLINK=nfs
++  elif `mount |grep -q "type iso9660"`; then PLINK=cdrom
++  else PLINK=disk
++  fi
+   if [ ! -d /$PLINK/kernels -a ! -d /$PLINK/isolinux/kernel -a ! -r $TMP/SeTCDdev ]; then
+    dialog --title "ERROR" --msgbox "Sorry, but the directories /$PLINK/kernels \
+ and /$PLINK/isolinux/kernel were not found.  Are you installing from a Slackware CD?  \

@@ -1,0 +1,149 @@
+USB INSTALLER FOR SLACKWARE 12.2
+================================
+
+This directory contains a script (create_multipartboot.sh) and several other
+files that will transform your USB stick into a bootable Slackware installer.
+The script creates an multi-partition image file (hence the script's
+filename), which you need to copy onto a USB stick.
+A (small) FAT partition contains the slackware setup program and the
+bootable code, while the rest of the available space will be used up by a
+'ext2' formatted partition in which as much Slackware packages are stored
+as can fit.
+
+The size of the image file is variable, so that you can optimally use the
+available space on your USB stick.
+
+* With a 256 MB stick you will be able to install the "a", "ap" and "n"
+  package series (minus the individual packages "ap/hplip ap/mysql ap/rpm
+  ap/zsh n/epic4 n/htdig n/ipw2100-fw n/ipw2200-fw n/lynx n/ncftp n/net-snmp
+  n/netatalk n/proftpd n/samba n/yptools n/ytalk n/zd1211-firmware") to create
+  a minimal but functional (and network-capable!) Slackware system.
+* With a 512 MB stick, you are able to install the "a", "ap", "d", "f",
+  "l" and "n" series (minus the "ap/hplip ap/mysql ap/rpm d/clisp d/gcc-java
+  d/gcc-gfortran d/gcc-gnat l/arts l/aspell-en l/gnome-icon-theme l/gtk+
+  l/gtk+2 l/jre l/lesstiff l/pygtk l/qt n/htdig n/ipw2100-fw n/ipw2200-fw
+  n/lynx n/net-snmp n/ntp n/ncftp" packages).
+* A 1GB stick will be able to hold the "a", "ap", "d", "f", "kde", "l",
+  "n", "tcl", "x", "xap" and "y" package series (minus "d/clisp d/gcc-java
+  d/gcc-gfortran d/gcc-gnat kde/kdeedu kde/kdevelop kde/kdewebdev kde/koffice
+  l/jre x/sazanami-fonts-ttf x/tibmachuni-font-ttf x/wqy-zenhei-font-ttf
+  x/xorg-docs xap/gimp-help xap/seamonkey"), which will leave just the
+  "e" "k" "kdei" and "t" series to be installed from another medium.
+* A 2GB stick will hold all the package series and the /extra directory
+  as well (the sources excluded).
+* A 4GB stick (or larger size) will contain the complete Slackware 12.2 tree
+  including all the sources.
+
+Imagine the fun of carrying your Slackware installer with you on your
+key chain or in your pocket!
+
+Requirements:
+-------------
+
+What you need apart from all the files here, is:
+
+* The 'ms-sys' program (get a Slackware package here:
+  http://www.slackware.com/~alien/slackbuilds/ms-sys/pkg/)
+  If you decide not to install and use ms-sys for the generation of a MBR
+  record, you can add the "-m" switch to the script and then it will use the
+  MBR that comes with SysLinux. The ms-sys program generates a 'better' Master
+  Boot Record, your mileage may vary.
+* A local mirror of the Slackware 12.2 tree (or at least the "isolinux",
+  "kernels" and "slackware" directories)
+
+Usage of the "create_multipartboot.sh" script:
+----------------------------------------------
+
+* Run the script as:
+    "sh create_multipartboot.sh -h"
+  to get an overview of the commandline parameters and image sizes.
+* To create an image file that fits on a 512 MB USB stick, run the script as
+  follows:
+    "sh create_multipartboot.sh 509"
+  (it is best to create an image that is slightly smaller than the advertised
+  USB key size else you run the risk it won't fit...)
+* The default action if you run the script without parameters, like this:
+    "sh create_multipartboot.sh"
+   is to create a 253 MB image file for a 256 MB USB stick.
+* If your copy of the Slackware 12.2 directory tree is located anywhere else
+  than the directory "/home/ftp/pub/Linux/Slackware/slackware-12.2" you can
+  run the script as follows - indicating where you _do_ have your local copy
+  of Slackware-12.2:
+    "SLACKROOT=/tmp/slack-12 sh create_multipartboot.sh 509"
+  ... if your Slackware directory is "/tmp/slack-12" and you have a 512MB USB
+  stick.
+
+The resulting image file is created by default in a directory "/tmp/slackboot"
+which will be created automatically if it does not yet exist.
+
+Copy the image to a USB stick:
+------------------------------
+
+   cd /tmp/slackboot
+   dd if=usbhd.img of=/dev/sdx
+
+(if /dev/sdx is the device name for your USB stick).
+
+NOTE 1: This will overwrite any data that is currently present on the device
+        so take very good care not to type the name of your harddisk here!
+NOTE 2: your computer BIOS must support booting from "USB HDD"
+
+
+Usage of the bootable USB stick:
+--------------------------------
+
+Plug the stick into your computer's USB slot, and boot it up. Make sure you
+select "boot from USB-HDD" - how you  do this is very dependent on the type
+of computer you have. Many computers will display a message during the initial
+stages of the booting that says something like
+  "Press [F12] for a boot device list"
+The Slackware installer will start just like when you had booted from a CDROM.
+Log in as "root". Start the install as usual, by creating disk partitions and
+running "setup".
+
+If you want to install from a NFS/HTTP/FTP/Samba server (but why should you
+want that with the packages being on your USB stick?), you should run the
+commands "pcmcia" (if your network card is PCMCIA) and/or "network" prior to
+the "setup" command in order to load a driver for your network card.
+
+Once you get to the "SOURCE" menu, you will notice that the default selection
+is a new entry: "Install from a Slackware USB stick". Accept this selection,
+and the installer should search for (and find) the partition on your USB stick
+with the Slackware package series on it. The rest of the install will proceed
+just like you are used to when doing CDROM based installs.
+
+Note:
+-----
+
+If you want to re-use your USB stick as an 'ordinary' data carrier, you'll
+have to wipe the first sector and create a new FAT partition on it.
+These are the actual commands (note that the fdisk command spans 10 lines,
+from the "fdisk /dev/sdx " up to the final "EOF". This is called
+a "here document" - look it up!
+All the commands needed to create the FAT partition fully automatic are
+positioned on their own line.
+You can of course create the FAT partition manually but consider this as a
+bonus learning experience :-) 
+
+# -------------------------------------------------------------
+# Commands to re-create a functional USB stick with FAT partition:
+# Take care about which device actually is your USB stick !!!!!!!!!
+# The next command will wipe all that is on /dev/sdx :
+dd if=/dev/zero of=/dev/sdx bs=512 count=1
+fdisk /dev/sdx <<EOF   # create a FAT16 partition (type '6')
+n
+p
+1
+
+
+t
+6
+w
+EOF
+mkdosfs -F32 /dev/sdx1 # Format with a vfat filesystem
+# -------------------------------------------------------------
+
+Have fun! Report problems to me (alien at slackware dot com) and not to Pat.
+
+===============================================================================
+Eric Hameleers <alien at slackware dot com> 23-dec-2008

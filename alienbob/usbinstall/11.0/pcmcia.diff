@@ -1,0 +1,53 @@
+--- pcmcia.org	2003-02-18 21:25:02.000000000 +0100
++++ pcmcia	2006-09-26 15:28:48.000000000 +0200
+@@ -42,6 +42,41 @@
+     echo "not found."
+   fi
+ 
++  if [ "$PKGSRC" = "USB" ]; then
++
++    echo "Attempting to mount USB stick..."
++
++    for device in $( /bin/grep sd[a-h]2 /proc/partitions | /bin/tr -s ' ' | /bin/cut -d' ' -f5 )
++    do
++      label=$( /sbin/e2label /dev/$device 2>/dev/null )
++      if [ "x$label" = "xUSBSLACKINSTALL" ] ; then
++        mount -o ro -t ext2 /dev/$device /var/log/mount 1> /dev/null 2> /dev/null
++        UMOUNTCDROM=/dev/$device
++        break
++      fi
++    done
++
++
++    echo -n "Searching for $IMAGEDEF in /disk/isolinux/... "
++    if [ -r /disk/isolinux/$IMAGEDEF ]; then
++      mount -o loop -o ro /disk/isolinux/$IMAGEDEF /network
++      echo "found."
++      break
++    else
++      echo "not found."
++    fi
++
++    echo -n "Searching for $IMAGEDEF in /disk/rootdisks/... "
++    if [ -r /disk/rootdisks/$IMAGEDEF ]; then
++      mount -o loop -o ro /disk/rootdisks/$IMAGEDEF /network
++      echo "found."
++      break
++    else
++      echo "not found."
++    fi
++
++  fi  # end USB
++
+   echo "Attempting to mount CD-ROM..."
+ 
+   # IDE device search:
+@@ -200,7 +235,7 @@
+ rmdir /pcmcia
+ 
+ if [ ! "$UMOUNTCDROM" = "" ]; then
+-  echo "Unmounting CD-ROM..."
++  echo "Unmounting device..."
+   umount /var/log/mount
+ fi
+ 

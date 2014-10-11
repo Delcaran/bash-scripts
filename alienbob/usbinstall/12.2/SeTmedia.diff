@@ -1,0 +1,38 @@
+--- SeTmedia.orig	2008-12-14 12:10:55.000000000 +0100
++++ SeTmedia	2008-12-14 12:15:07.000000000 +0100
+@@ -4,16 +4,24 @@
+   mkdir -p $TMP
+ fi
+ 
++unset ITEM
++if [ "x$PKGSRC" = "xNFS" ]; then
++  ITEM=" --default-item 3 "
++elif [ "x$PKGSRC" = "xUSB" ]; then
++  ITEM=" --default-item 7 "
++fi
++
+ dialog --backtitle "Select Slackware installation source." \
+---title "SOURCE MEDIA SELECTION" --menu \
++--title "SOURCE MEDIA SELECTION" $ITEM --menu \
+ "Please select the media from which to install Slackware Linux:" \
+-13 70 6 \
++14 70 7 \
+ "1" "Install from a Slackware CD or DVD" \
+ "2" "Install from a hard drive partition" \
+ "3" "Install from NFS (Network File System)" \
+ "4" "Install from FTP/HTTP server" \
+ "5" "Install from Samba share" \
+ "6" "Install from a pre-mounted directory" \
++"7" "Install from a Slackware USB stick" \
+ 2> $TMP/media
+ if [ ! $? = 0 ]; then
+  rm $TMP/media
+@@ -37,6 +45,8 @@
+  INSSMB 
+ elif [ "$SOURCE_MEDIA" = "6" ]; then
+  INSdir
++elif [ "$SOURCE_MEDIA" = "7" ]; then
++ INSUSB
+ fi
+ 
+ # Sorry, this goes the way of the dinosaur...

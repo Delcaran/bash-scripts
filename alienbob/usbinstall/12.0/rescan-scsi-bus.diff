@@ -1,0 +1,40 @@
+--- rescan-scsi-bus.org	2007-05-21 00:51:03.000000000 +0200
++++ rescan-scsi-bus	2007-05-21 00:59:47.000000000 +0200
+@@ -77,7 +77,7 @@
+ 	      IVEND=$(cat ${SCSIPATH}/device/vendor)
+ 	      IPROD=$(cat ${SCSIPATH}/device/model)
+ 	      IPREV=$(cat ${SCSIPATH}/device/rev)
+-	      SCSIDEV=$(printf '  Vendor: %-08s Model: %-16s Rev: %-4s' "$IVEND" "$IPROD" "$IPREV")
++	      SCSIDEV=$(printf '  Vendor: %-8s Model: %-16s Rev: %-4s' "$IVEND" "$IPROD" "$IPREV")
+ 	      SCSISTR="$SCSISTR
+ $SCSIDEV"
+ 	  fi
+@@ -181,7 +181,7 @@
+   IVEND=`echo "$INQ" | grep 'Vendor identification:' | sed 's/^[^:]*: \(.*\)$/\1/'`
+   IPROD=`echo "$INQ" | grep 'Product identification:' | sed 's/^[^:]*: \(.*\)$/\1/'`
+   IPREV=`echo "$INQ" | grep 'Product revision level:' | sed 's/^[^:]*: \(.*\)$/\1/'`
+-  STR=`printf "  Vendor: %-08s Model: %-16s Rev: %-4s" "$IVEND" "$IPROD" "$IPREV"`
++  STR=`printf "  Vendor: %-8s Model: %-16s Rev: %-4s" "$IVEND" "$IPROD" "$IPREV"`
+   procscsiscsi
+   SCSISTR=`echo "$SCSISTR" | grep 'Vendor:'`
+   if [ "$SCSISTR" != "$STR" ]; then
+@@ -198,7 +198,7 @@
+   SCSISTR=
+   if procscsiscsi; then
+     echo "$SCSISTR" | head -n1
+-    echo "$SCSISTR" | tail -n2 | pr -o4 -l1
++    echo "$SCSISTR" | tail -n2
+   fi
+ }
+ 
+@@ -362,8 +362,8 @@
+ echo "Scanning hosts $hosts channels $channelsearch for "
+ echo " SCSI target IDs " $idsearch ", LUNs " $lunsearch
+ test -z "$remove" || echo " and remove devices that have disappeared"
+-declare -i found=0
+-declare -i rmvd=0
++let found=0
++let rmvd=0
+ for host in $hosts; do 
+   # YOU MAY NEED TO UNCOMMENT THESE TO ALLOW FOR A RESCAN
+   #test -e /sys/class/fc_host/host$host/issue_lip && echo 1 > /sys/class/fc_host/host$host/issue_lip 2> /dev/null;

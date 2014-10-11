@@ -1,0 +1,12 @@
+# Scarica i calendari di Google per Orage
+basic="https://www.google.com/calendar/ical/duwath%40gmail.com/private-77d555d9ac448f26b18a4bf986720f04/basic.ics"
+esami="https://www.google.com/calendar/ical/42gp2ft4t9sqapcpi55jftvqog%40group.calendar.google.com/private-af473d895b0d262cf22464d2119fef5f/basic.ics"
+lavoro="https://www.google.com/calendar/ical/n7uqadhcg8fc70egk8cadb7c6o%40group.calendar.google.com/private-a078ad80becde25fbb9a41a34176f04e/basic.ics"
+ricorrenze="https://www.google.com/calendar/ical/sk0t89b2atd82k6r8paejjvs9k%40group.calendar.google.com/private-2508f69bd802340d37e7aa7bf3cdd563/basic.ics"
+uni="https://www.google.com/calendar/ical/jid67pnmbamvdouianjtq1vlek%40group.calendar.google.com/private-4e1566c8c06918b5545c6fe16b783bde/basic.ics"
+
+for cal in "basic" "esami" "lavoro" "ricorrenze" "uni"
+do
+    wget -N ${!cal} -O ${cal}.ics
+done
+

@@ -1,0 +1,502 @@
+BEGIN:VCALENDAR
+PRODID:-//Google Inc//Google Calendar 70.9054//EN
+VERSION:2.0
+CALSCALE:GREGORIAN
+METHOD:PUBLISH
+X-WR-CALNAME:Ricorrenze Speciali
+X-WR-TIMEZONE:Europe/Rome
+X-WR-CALDESC:Tutte cose che accadono ogni tot legate a cose particolari
+BEGIN:VTIMEZONE
+TZID:Europe/Rome
+X-LIC-LOCATION:Europe/Rome
+BEGIN:DAYLIGHT
+TZOFFSETFROM:+0100
+TZOFFSETTO:+0200
+TZNAME:CEST
+DTSTART:19700329T020000
+RRULE:FREQ=YEARLY;BYMONTH=3;BYDAY=-1SU
+END:DAYLIGHT
+BEGIN:STANDARD
+TZOFFSETFROM:+0200
+TZOFFSETTO:+0100
+TZNAME:CET
+DTSTART:19701025T030000
+RRULE:FREQ=YEARLY;BYMONTH=10;BYDAY=-1SU
+END:STANDARD
+END:VTIMEZONE
+BEGIN:VEVENT
+DTSTART;VALUE=DATE:20140206
+DTEND;VALUE=DATE:20140207
+DTSTAMP:20140305T153003Z
+UID:app3ie9du2lot3vvf5vna574r8@google.com
+CREATED:20140102T165245Z
+DESCRIPTION:CineTrailer - Robocop: http://cn3.tv/Hq72X via @cinetrailer
+LAST-MODIFIED:20140102T165245Z
+LOCATION:
+SEQUENCE:0
+STATUS:CONFIRMED
+SUMMARY:Robocop (CineTrailer)
+TRANSP:OPAQUE
+CATEGORIES:http://schemas.google.com/g/2005#event
+END:VEVENT
+BEGIN:VEVENT
+DTSTART;VALUE=DATE:20140107
+DTEND;VALUE=DATE:20140108
+DTSTAMP:20140305T153003Z
+UID:snqvn67ehs06abr5snaqjes6gk@google.com
+CREATED:20140102T102412Z
+LAST-MODIFIED:20140102T102412Z
+LOCATION:
+SEQUENCE:0
+STATUS:CONFIRMED
+SUMMARY:Yotobi live
+TRANSP:OPAQUE
+CATEGORIES:http://schemas.google.com/g/2005#event
+END:VEVENT
+BEGIN:VEVENT
+DTSTART;TZID=Europe/Rome:20131205T200000
+DTEND;TZID=Europe/Rome:20131205T210000
+RRULE:FREQ=WEEKLY;BYDAY=TH
+DTSTAMP:20140305T153003Z
+UID:2p321hguc1baerie50aomo1n0g@google.com
+CREATED:20131205T183125Z
+DESCRIPTION:
+LAST-MODIFIED:20131220T123630Z
+LOCATION:
+SEQUENCE:0
+STATUS:CONFIRMED
+SUMMARY:Humble Weekly Bundle
+TRANSP:OPAQUE
+CATEGORIES:http://schemas.google.com/g/2005#event
+END:VEVENT
+BEGIN:VEVENT
+DTSTART;TZID=Europe/Rome:20131213T083000
+DTEND;TZID=Europe/Rome:20131213T093000
+RRULE:FREQ=MONTHLY;INTERVAL=3;BYMONTHDAY=6
+DTSTAMP:20140305T153003Z
+UID:n15b298i3uqhht81man4tekc5o@google.com
+CREATED:20131205T182938Z
+LAST-MODIFIED:20131205T182940Z
+LOCATION:
+SEQUENCE:0
+STATUS:CONFIRMED
+SUMMARY:Donare Sangue
+TRANSP:OPAQUE
+CATEGORIES:http://schemas.google.com/g/2005#event
+END:VEVENT
+BEGIN:VEVENT
+DTSTART;TZID=Europe/Rome:20130306T183000
+DTEND;TZID=Europe/Rome:20130306T193000
+RRULE:FREQ=MONTHLY;UNTIL=20131206T172959Z;INTERVAL=3;WKST=MO;BYMONTHDAY=6
+EXDATE;TZID=Europe/Rome:20130306T183000
+DTSTAMP:20140305T153003Z
+UID:loan847thu7lttv0o8vbtqah2s@google.com
+CREATED:20130306T172420Z
+DESCRIPTION:
+LAST-MODIFIED:20131205T182937Z
+LOCATION:
+SEQUENCE:0
+STATUS:CONFIRMED
+SUMMARY:Donare Sangue
+TRANSP:OPAQUE
+CATEGORIES:http://schemas.google.com/g/2005#event
+END:VEVENT
+BEGIN:VEVENT
+DTSTART:20131029T170000Z
+DTEND:20131029T180000Z
+DTSTAMP:20140305T153003Z
+UID:s2h792r1ot5mgvto1lv2lskoc0@google.com
+CREATED:20131021T161526Z
+DESCRIPTION:
+LAST-MODIFIED:20131021T161526Z
+LOCATION:
+SEQUENCE:0
+STATUS:CONFIRMED
+SUMMARY:Humble Bundle
+TRANSP:TRANSPARENT
+END:VEVENT
+BEGIN:VEVENT
+DTSTART;VALUE=DATE:20130117
+DTEND;VALUE=DATE:20130118
+RRULE:FREQ=YEARLY;WKST=MO
+DTSTAMP:20140305T153003Z
+UID:9so3khnrajcanvobkh2rdhi18o@google.com
+CREATED:20131016T104451Z
+LAST-MODIFIED:20131016T104451Z
+LOCATION:
+SEQUENCE:0
+STATUS:CONFIRMED
+SUMMARY:Compleanno Milena (sara)
+TRANSP:OPAQUE
+CATEGORIES:http://schemas.google.com/g/2005#event
+END:VEVENT
+BEGIN:VEVENT
+DTSTART;VALUE=DATE:20131126
+DTEND;VALUE=DATE:20131127
+RRULE:FREQ=YEARLY;WKST=MO
+DTSTAMP:20140305T153003Z
+UID:bq4g70kpmosd1pgsup8qi72jbs@google.com
+CREATED:20131016T104345Z
+LAST-MODIFIED:20131016T104346Z
+LOCATION:
+SEQUENCE:0
+STATUS:CONFIRMED
+SUMMARY:Compleanno padre Sara
+TRANSP:OPAQUE
+CATEGORIES:http://schemas.google.com/g/2005#event
+END:VEVENT
+BEGIN:VEVENT
+DTSTART;VALUE=DATE:20130525
+DTEND;VALUE=DATE:20130526
+RRULE:FREQ=YEARLY;WKST=MO
+DTSTAMP:20140305T153003Z
+UID:n1ffp4ivbakdiog0vf39ctn97s@google.com
+CREATED:20130525T112936Z
+DESCRIPTION:
+LAST-MODIFIED:20130525T112936Z
+LOCATION:
+SEQUENCE:0
+STATUS:CONFIRMED
+SUMMARY:Happy Geek Day
+TRANSP:OPAQUE
+END:VEVENT
+BEGIN:VEVENT
+DTSTART;VALUE=DATE:20130529
+DTEND;VALUE=DATE:20130530
+DTSTAMP:20140305T153003Z
+UID:kd9dprfpb9b6m9t1jdvbf7eutk@google.com
+CREATED:20130423T162446Z
+DESCRIPTION:
+LAST-MODIFIED:20130423T162446Z
+LOCATION:
+SEQUENCE:0
+STATUS:CONFIRMED
+SUMMARY:AKIRA al cinema
+TRANSP:TRANSPARENT
+END:VEVENT
+BEGIN:VEVENT
+DTSTART;VALUE=DATE:20130311
+DTEND;VALUE=DATE:20130312
+RRULE:FREQ=YEARLY
+DTSTAMP:20140305T153003Z
+UID:a19iljsuu6qr4vok7uf9sqhcf0@google.com
+CREATED:20130311T100541Z
+DESCRIPTION:
+LAST-MODIFIED:20130311T100541Z
+LOCATION:
+SEQUENCE:0
+STATUS:CONFIRMED
+SUMMARY:Compleanno Douglas Adams
+TRANSP:TRANSPARENT
+END:VEVENT
+BEGIN:VEVENT
+DTSTART;VALUE=DATE:20130405
+DTEND;VALUE=DATE:20130406
+DTSTAMP:20140305T153003Z
+UID:jr656o83i4rm91nr437c3988p4@google.com
+CREATED:20130310T135519Z
+DESCRIPTION:
+LAST-MODIFIED:20130310T135519Z
+LOCATION:
+SEQUENCE:0
+STATUS:CONFIRMED
+SUMMARY:Laurea Sisu
+TRANSP:TRANSPARENT
+END:VEVENT
+BEGIN:VEVENT
+DTSTART;VALUE=DATE:20120628
+DTEND;VALUE=DATE:20120629
+RRULE:FREQ=YEARLY
+DTSTAMP:20140305T153003Z
+UID:er31t8nesiguvnolcstbhrvma4@google.com
+ATTENDEE;CUTYPE=INDIVIDUAL;ROLE=REQ-PARTICIPANT;PARTSTAT=ACCEPTED;CN=Ricorr
+ enze Speciali;X-NUM-GUESTS=0:mailto:sk0t89b2atd82k6r8paejjvs9k@group.calend
+ ar.google.com
+CREATED:20120314T163100Z
+DESCRIPTION:
+LAST-MODIFIED:20120628T132703Z
+LOCATION:
+SEQUENCE:0
+STATUS:CONFIRMED
+SUMMARY:Tau Day
+TRANSP:TRANSPARENT
+END:VEVENT
+BEGIN:VEVENT
+DTSTART;VALUE=DATE:20120628
+DTEND;VALUE=DATE:20120629
+RRULE:FREQ=YEARLY
+DTSTAMP:20140305T153003Z
+UID:ni703pgmb9ao1onkq94jp0rlts@google.com
+CREATED:20120628T132610Z
+DESCRIPTION:
+LAST-MODIFIED:20120628T132610Z
+LOCATION:
+SEQUENCE:0
+STATUS:CONFIRMED
+SUMMARY:CAPS LOCK DAY
+TRANSP:TRANSPARENT
+END:VEVENT
+BEGIN:VEVENT
+DTSTART;VALUE=DATE:20120317
+DTEND;VALUE=DATE:20120318
+RRULE:FREQ=YEARLY
+DTSTAMP:20140305T153003Z
+UID:EE5F884D-E28F-4A40-A746-721EED951C6F
+CREATED:20120318T122525Z
+DESCRIPTION:
+LAST-MODIFIED:20120318T122525Z
+LOCATION:
+SEQUENCE:0
+STATUS:CONFIRMED
+SUMMARY:San Patrizio
+TRANSP:OPAQUE
+END:VEVENT
+BEGIN:VEVENT
+DTSTART;VALUE=DATE:20120314
+DTEND;VALUE=DATE:20120315
+RRULE:FREQ=YEARLY
+DTSTAMP:20140305T153003Z
+UID:uot04oftbgomkb3n7ijm5njvlg@google.com
+CREATED:20120314T163028Z
+DESCRIPTION:
+LAST-MODIFIED:20120314T163028Z
+LOCATION:
+SEQUENCE:0
+STATUS:CONFIRMED
+SUMMARY:PiGreco Day
+TRANSP:TRANSPARENT
+END:VEVENT
+BEGIN:VEVENT
+DTSTART;VALUE=DATE:20120430
+DTEND;VALUE=DATE:20120501
+DTSTAMP:20140305T153003Z
+UID:63EECA30-6D39-4479-8646-CE5AE64B7777
+CREATED:20111230T120015Z
+DESCRIPTION:
+LAST-MODIFIED:20111230T120015Z
+LOCATION:
+SEQUENCE:0
+STATUS:CONFIRMED
+SUMMARY:Bollo scaduto
+TRANSP:OPAQUE
+END:VEVENT
+BEGIN:VEVENT
+DTSTART:20111108T183000Z
+DTEND:20111111T060000Z
+DTSTAMP:20140305T153003Z
+UID:55AFE168-EEED-422F-B00F-AE21A61CB054
+CREATED:20111104T142018Z
+DESCRIPTION:
+LAST-MODIFIED:20111104T142018Z
+LOCATION:
+SEQUENCE:0
+STATUS:CONFIRMED
+SUMMARY:Sciopero benzinai
+TRANSP:OPAQUE
+END:VEVENT
+BEGIN:VEVENT
+DTSTART;VALUE=DATE:20111016
+DTEND;VALUE=DATE:20111017
+RRULE:FREQ=YEARLY
+DTSTAMP:20140305T153003Z
+UID:E475D359-C1C2-4014-90CB-CD7C0ECE62CE
+CREATED:20111016T155519Z
+DESCRIPTION:
+LAST-MODIFIED:20111016T155519Z
+LOCATION:
+SEQUENCE:0
+STATUS:CONFIRMED
+SUMMARY:Compleanno mamma Sara
+TRANSP:OPAQUE
+END:VEVENT
+BEGIN:VEVENT
+DTSTART;VALUE=DATE:20110727
+DTEND;VALUE=DATE:20110728
+RRULE:FREQ=YEARLY
+DTSTAMP:20140305T153003Z
+UID:ejl2f7m688odkrdat32b23qh64@google.com
+CREATED:20110727T122622Z
+DESCRIPTION:In pratica\, di fronte ad una qualsiasi situazione che preveda 
+ una scelta (dall’acquisto di cappuccino+pasta per colazione al matrimonio r
+ eligioso)\, il Nerd potrà (o dovrà\, se ortodosso) lanciare il d20 in pubbl
+ ico e comportarsi secondo la seguente tabella (che potrà portare in tasca s
+ otto forma di pratico cartoncino o\, in casi estremi\, tatuarsi sul petto).
+ \n\n1 – FALLIMENTO CRITICO – Il Nerd cade in profonda depressione rispetto 
+ al proprio obiettivo oppure fa esattamente il contrario di quanto prefisso.
+ \n\n-Situazione Cappuccino: “Non sono degno di fare colazione” e corre via\
+ , piangendo\, dal bar. Oppure ordina un panino tabasco e salamella e un bic
+ chiere del peggior Rum di Caracas e se lo scola.\n-Situazione Matrimonio: “
+ Scusa\, non posso sposarti. Sono Batman”.\n\n2-5 – FALLIMENTO MODERATO – Il
+  Nerd è costretto a rivalutare drasticamente i propri obiettivi\, in nome d
+ ella crisi.\n\n-Situazione Cappuccino: “Vorrei un caffè ristretto senza zuc
+ chero e leccare quel cioccolatino\, per favore”.\n-Situazione Matrimonio: “
+ Sei troppo bella per me. Ho deciso che oggi sposerò Gwenda\, l’Orrida Damig
+ ella d’onore con l’alitosi”. E lo fate. Davvero. Tra lo sgomento dei parent
+ i (e la somma felicità di Gwenda).\n\n6-10 – NE’ CARNE NE’ PESCE – Il Nerd 
+ esegue\, ma senza entusiasmo. Dando\, anzi\, l’impressione di compiere un a
+ tto assolutamente standard.\n\n-Situazione Cappuccino: “Il solito cappuccin
+ o e la solita pasta” – “Quanto le devo?” – “Guardi\, oggi non la ringrazio.
+  Facciamo che ci penso un po’ su e semmai ripasso”.\n-Situazione Matrimonio
+ : “Vuoi tu prenderla in sposa?” “Vabbè”.\n\n11-15 – SUCCESSO ACCETTABILE – 
+ Il Nerd si sente proprio soddisfatto\, anche se gli è impedito assolutament
+ e crogiolarsi nel proprio successo.\n\n-Situazione Cappuccino: “Un bel capp
+ uccino e questa pasta al cioccolato”. “Vuole del cioccolato sul cappuccino?
+ ” “Eh\, no. Non vogliamo esagerare”.\n-Situazione Matrimonio: “Sono sicuro 
+ che avremo una vita bella e soddisfacente ma vorrei che firmassi questo acc
+ ordo per cui il numero di figli massimo è fissato a due e le copule post-ma
+ trimoniali non potranno eccedere il tetto di 2 la settimana. Ah\, c’è un ri
+ gido sistema di turni in merito alle posizioni”. E dopo ti lanciano il clas
+ sico riso.\n\n16-19 – SUCCESSONE PRESSOCHE’ TOTALE – Il Nerd porta avanti l
+ a propria decisione con fierezza et ardimento\, alla facciaccia dei borghes
+ ucci che lo vorrebbero docile e pavido. Può\, quindi\, calcare la mano.\n\n
+ -Situazione Cappuccino: “Sa che le dico? La sfido a superarsi. Mi prepari i
+ l cappuccino più buono che abbia mai bevuto. Caffè brasiliano leggermente t
+ ostato\, cioccolata fondente\, panna\, faccia lei! E se è davvero buono\, o
+ ffro un cappuccino a tutta questa bella gente\, per Crom!”\n-Situazione Mat
+ rimonio: All’uscita della chiesa\, fate esplodere fuochi artificiali a form
+ a di Fenice. Imponete che gli invitati al ricevimento siano tutti cosplayer
+ s. Ingaggiate come celebrante Hayao Miyazaki travestito da prete.\n\n20 – C
+ RITICO (confermato) – Il Nerd si esibisce in una dimostrazione di assoluto 
+ quanto improbabile potere. Segue le proprie convinzioni in maniera rutilant
+ e e sorprendente. Tutta la nerditudine inespressa emerge in un vulcano capa
+ ce di travolgere le folle.\n\n-Situazione Cappuccino: Beve il cappuccino. P
+ oi\, con voce impostata: “Il giorno in cui il giovane (inserire nome del Ne
+ rd) bevve inconsapevolmente un cappuccino radioattivo non sapeva che avrebb
+ e ottenuto\, di conseguenza\, la forza\, la velocità e i sensi proporzional
+ i di un cappuccino. Fu così che nacque… (pausa drammatica) Croissant-Man!”.
+  E poi\, in un impeto supereroistico\, il Nerd annaffia tutti con i rimasug
+ li di schiuma e si dilegua\, con una risata satanica\, nel traffico mattuti
+ no.\n-Situazione Matrimonio: Con una mossa a sorpresa\, il Nerd bacia il pr
+ ete con sommo gaudio di tutte le manga-girls d’attorno. Poi\, rovescia la s
+ posa sull’altare e i due s’accoppiano felici di fronte agli invitati tutti.
+  Al culmine della passione la spina dorsale della sposa riluce di uno splen
+ dore rosso-neon. 
+LAST-MODIFIED:20110727T122622Z
+LOCATION:
+SEQUENCE:0
+STATUS:CONFIRMED
+SUMMARY:d20-Day
+TRANSP:TRANSPARENT
+END:VEVENT
+BEGIN:VEVENT
+DTSTART:20110615T180000Z
+DTEND:20110615T230000Z
+DTSTAMP:20140305T153003Z
+UID:jmk7ft909cdp0jtigvvjku43pg@google.com
+CREATED:20110530T084633Z
+DESCRIPTION:
+LAST-MODIFIED:20110530T084633Z
+LOCATION:
+SEQUENCE:0
+STATUS:CONFIRMED
+SUMMARY:Eclissi Totale Luna
+TRANSP:OPAQUE
+END:VEVENT
+BEGIN:VEVENT
+DTSTART;VALUE=DATE:20110325
+DTEND;VALUE=DATE:20110326
+RRULE:FREQ=YEARLY
+DTSTAMP:20140305T153003Z
+UID:alrljkubjp4m89dl60tnjv7jsg@google.com
+CREATED:20110324T112804Z
+DESCRIPTION:Sconfitta di Sauron durante la Guerra dell'Anello
+LAST-MODIFIED:20110522T014822Z
+LOCATION:
+SEQUENCE:0
+STATUS:CONFIRMED
+SUMMARY:Tolkien Reading Day
+TRANSP:TRANSPARENT
+END:VEVENT
+BEGIN:VEVENT
+DTSTART;VALUE=DATE:20110504
+DTEND;VALUE=DATE:20110505
+RRULE:FREQ=YEARLY
+DTSTAMP:20140305T153003Z
+UID:b1ci9rtl9an4hpsc5gei63m3so@google.com
+CREATED:20110504T093046Z
+DESCRIPTION:
+LAST-MODIFIED:20110522T014822Z
+LOCATION:
+SEQUENCE:0
+STATUS:CONFIRMED
+SUMMARY:Star Wars Day
+TRANSP:TRANSPARENT
+END:VEVENT
+BEGIN:VEVENT
+DTSTART;VALUE=DATE:20110429
+DTEND;VALUE=DATE:20110502
+DTSTAMP:20140305T153003Z
+UID:hmh0gu33tuor34stjtip3gsopc@google.com
+CREATED:20110424T164143Z
+DESCRIPTION:
+LAST-MODIFIED:20110522T014822Z
+LOCATION:Fiera Pordenone
+SEQUENCE:0
+STATUS:CONFIRMED
+SUMMARY:RadioAmatore
+TRANSP:TRANSPARENT
+END:VEVENT
+BEGIN:VEVENT
+DTSTART;VALUE=DATE:20111119
+DTEND;VALUE=DATE:20111121
+DTSTAMP:20140305T153003Z
+UID:itjdhmb8csm805nb5hrpqtli0o@google.com
+CREATED:20110424T164225Z
+DESCRIPTION:
+LAST-MODIFIED:20110522T014822Z
+LOCATION:Fiera Pordenone
+SEQUENCE:0
+STATUS:CONFIRMED
+SUMMARY:RadioAmatore 2
+TRANSP:TRANSPARENT
+END:VEVENT
+BEGIN:VEVENT
+DTSTART;VALUE=DATE:19900921
+DTEND;VALUE=DATE:19900922
+RRULE:FREQ=YEARLY
+DTSTAMP:20140305T153003Z
+UID:n5hs9cvd7j85c1vlp2u69pacn8@google.com
+CREATED:20101014T150450Z
+DESCRIPTION:
+LAST-MODIFIED:20101112T042456Z
+LOCATION:
+SEQUENCE:0
+STATUS:CONFIRMED
+SUMMARY:Talk Like A Pirate Day
+TRANSP:TRANSPARENT
+END:VEVENT
+BEGIN:VEVENT
+DTSTART;VALUE=DATE:20100611
+DTEND;VALUE=DATE:20100712
+DTSTAMP:20140305T153003Z
+UID:fli2ct78if8bdllinvsjlum4os@google.com
+ATTENDEE;CUTYPE=INDIVIDUAL;ROLE=REQ-PARTICIPANT;PARTSTAT=ACCEPTED;CN=Ricorr
+ enze Speciali;X-NUM-GUESTS=0:mailto:sk0t89b2atd82k6r8paejjvs9k@group.calend
+ ar.google.com
+CREATED:20100513T092630Z
+DESCRIPTION:
+LAST-MODIFIED:20100515T085246Z
+LOCATION:
+SEQUENCE:0
+STATUS:CONFIRMED
+SUMMARY:Mondiali
+TRANSP:TRANSPARENT
+END:VEVENT
+BEGIN:VEVENT
+DTSTART;VALUE=DATE:20010525
+DTEND;VALUE=DATE:20010526
+RRULE:FREQ=YEARLY;WKST=MO
+DTSTAMP:20140305T153003Z
+UID:skp1n7tclqs54d3sull0sscikk@google.com
+CREATED:20091104T095051Z
+DESCRIPTION:Il Giorno dell'Asciugamano\, in memoria di Douglas Adams e dell
+ a sua Guida Galattica per Autostoppisti. In questo giorno tutti coloro che 
+ lo festeggiano gireranno sempre con un asciugamano con loro.
+LAST-MODIFIED:20100309T081931Z
+LOCATION:Ovunque
+SEQUENCE:0
+STATUS:CONFIRMED
+SUMMARY:Towel Day
+TRANSP:TRANSPARENT
+END:VEVENT
+END:VCALENDAR

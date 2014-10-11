@@ -1,0 +1,156 @@
+#!/bin/bash
+#$Id: checkpkg,v 1.15 2014/01/21 14:19:45 eha Exp eha $
+#
+# ---------------------------------------------------------------------------
+#
+# Check a Slackware package or a build log for defects and irregularities.
+#
+# Either pass the path to a Slackware package as single argument if you want
+# to verify that the package sticks to Slackware standards,
+# or else pass "-l /path/to/build.log" as argument if you want to examine
+# that log file for build and packaging errors.
+#
+# Author: Eric Hameleers <alien@slackware.com>
+# ---------------------------------------------------------------------------
+
+# Be quite silent by default:
+VERBOSE=0
+
+# By default the scripts checks packages, not log files:
+CHECKLOG=0
+
+# Command line parameter processing:
+while getopts "hl:v" Option
+do
+  case $Option in
+    h ) echo "Parameters are:"
+        echo "  -h           : This help text"
+        echo "  -l <logfile> : Check a logfile instead of a package"
+        exit
+        ;;
+    l ) FILE="${OPTARG}"
+        CHECKLOG=1
+        ;;
+    v ) let VERBOSE=($VERBOSE+1)
+        ;;
+    * ) echo "** You passed an illegal switch to the program!"
+        echo "** Run '$0 -h' for more help."
+        exit
+        ;;   # DEFAULT
+  esac
+done
+
+# End of option parsing.
+shift $(($OPTIND - 1))
+#  $1 now references the first non option item supplied on the command line
+#  if one exists.
+# ---------------------------------------------------------------------------
+
+if [ -n "$1" ]; then
+  FILE="$1"
+fi
+
+if [ -z "$FILE" ]; then
+  echo "** You must supply a filename!"
+  exit 1
+elif [ ! -f "$FILE" ]; then
+  echo  "** Can not open file '$FILE' for examination!"
+  exit 1
+fi
+
+# Return a package name that has been stripped of the dirname portion
+# and any of the valid extensions (only):
+pkgbase() {
+  PKGEXT=$(echo $1 | rev | cut -f 1 -d . | rev)
+  case $PKGEXT in
+  'tgz' )
+    PKGRETURN=$(basename $1 .tgz)
+    ;;
+  'tbz' )
+    PKGRETURN=$(basename $1 .tbz)
+    ;;
+  'tlz' )
+    PKGRETURN=$(basename $1 .tlz)
+    ;;
+  'txz' )
+    PKGRETURN=$(basename $1 .txz)
+    ;;
+  *)
+    echo "++ Unsupported package extension (allowed are tgz,tbz,tlz,txz)."
+    PKGRETURN=$(basename $1)
+    ;;
+  esac
+  echo $PKGRETURN
+}
+
+check_log() {
+  LOGFILE=$1
+  echo "++ Checking logfile '$(basename $LOGFILE)' (no news is good news):"
+  grep -E -nT "FAIL| hunk ignored|[^A-Z]Error |[^A-Z]ERROR |Error:|error:|errors occurred|ved symbol|ndefined reference to|ost recent call first|ot found|annot find -l|make: \*\*\* No |kipping patch|t seem to find a patch|^Usage: |option requires |SlackBuild: line" $LOGFILE
+  grep "install " $LOGFILE | grep -v "checking for " | grep -v -E "(/tmp/|/tmp/build/|/tmp/SBo|/mnt/hd/build/)(package-|tmp)" | grep -E " /(usr|etc|var|home)/" | grep -v " ./"
+}
+
+check_pkg() {
+  PKG=$1
+  if [ -f $PKG ]; then
+    unset PKGARCH PKGTOP PKGNONROOT PKGBADPERM PKGDESC PKGMAN PKGLOCAL PKGLIB
+    echo "++ Checking package '$(basename $PKG)' (no news is good news):"
+    PKGBASE=$(pkgbase $PKG)
+    PKGARCH=$(echo $PKGBASE |rev |cut -f2 -d- |rev)
+    PKGSHORTNAME=$(echo $PKGBASE |rev |cut -f4- -d- |rev)
+    # Count number of segments in the package basename:
+    INDEX=1
+    while [ ! "$(echo $PKGBASE | cut -f $INDEX -d -)" = "" ]; do
+      INDEX=$(expr $INDEX + 1)
+    done
+    INDEX=$(expr $INDEX - 1) # don't include the null value
+    # If we have less than four segments we have an invalid package name:
+    if [ $INDEX -lt 4 ]; then
+       echo "++ Package name not according to spec."
+    else
+      if ! echo $PKGARCH |grep -q -E "(x86_64|i?86|arm|fw|noarch)" ; then
+        echo "++ Package ARCH not detected - potential problem in package name."
+      fi
+    fi
+    # Several checks on package content:
+    PKGTOP="$(tar tvf $PKG | head -1 | grep -v "^drwxr-xr-x root/root")"
+    [ -z "$PKGTOP" ] || echo -e "++ Top directory is wrong:\n$PKGTOP"
+    PKGNONROOT="$(tar tvf $PKG | grep -v root/root)"
+    [ -z "$PKGNONROOT" ] || echo -e "++ Files not owned by root:\n$PKGNONROOT"
+    PKGBADPERM="$(tar tvf $PKG | grep -- ---)"
+    [ -z "$PKGBADPERM" ] || echo -e "++ Files with strange perms:\n$PKGBADPERM"
+    TEMPDIR=$(mktemp -p /tmp -d checkpkg.XXXXXX)
+    tar -C $TEMPDIR -xf $PKG install/slack-desc
+    if [ $? -ne 0 ]; then
+      echo "++ No slack-desc found."
+    else
+      PKGDESC=$(grep "^${PKGSHORTNAME}:" $TEMPDIR/install/slack-desc |wc -l)
+      [ $PKGDESC -ne 11 ] && echo "++ slack-desc has $PKGDESC lines that start with '${PKGSHORTNAME}:' (should be 11)."
+      DESCLONG=0
+      cat $TEMPDIR/install/slack-desc | grep "^${PKGSHORTNAME}:" | while read LINE ; do if [ $(echo $LINE | sed "s/^${PKGSHORTNAME}//" |wc -c) -gt 80 ]; then DESCLONG=1 ; fi ;  done
+      [ $DESCLONG -eq 1 ] && echo "++ slack-desc contains lines >80 characters."
+    fi
+    rm -rf $TEMPDIR
+    PKGMAN="$(tar tvf $PKG | grep usr/share/man)"
+    [ -z "$PKGMAN" ] || echo -e "++ man directory '/usr/share/man' found." 
+    PKGMANGZ="$(tar tvf $PKG | grep -E '^-.* usr/man' | grep -Ev '.gz$')"
+    [ -z "$PKGMANGZ" ] || echo -e "++ Uncompressed man pages found." 
+    PKGLOCAL="$(tar tvf $PKG | grep usr/local/)"
+    [ -z "$PKGLOCAL" ] || echo -e "++ Directory '/usr/local/' found." 
+
+    # For 64bit only:
+    if [ "$PKGARCH" = "x86_64" ]; then
+      PKGLIB="$(tar tvf $PKG | grep usr/lib/)"
+      [ -z "$PKGLIB" ] || echo -e "++ Found '/usr/lib/' in 64bit package." 
+    fi
+  else
+    echo "++ NO package '$(basename $PKG)' was found!"
+  fi
+}
+
+# Check for anomalies:
+if [ $CHECKLOG -eq 1 ]; then
+  check_log "$FILE"
+else
+  check_pkg "$FILE"
+fi

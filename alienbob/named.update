@@ -1,0 +1,51 @@
+#!/bin/sh
+# $Id: named.update,v 1.2 2005/09/14 10:12:52 root Exp root $
+# ---------------------------------------------------------------------------
+# Purpose:
+# Update the nameserver cache information file.
+# This is typically run automatically by a cron entry (say, once a month).
+# ** the script was modelled after an example found on the Internet **
+#
+# Eric Hameleers <alien@slackware.com>
+# ---------------------------------------------------------------------------
+
+(
+  echo "To: hostmaster <hostmaster>"
+  echo "From: system <root>"
+  echo "Subject: Automatic update of the named.root file"
+  echo
+
+  export PATH=/sbin:/usr/sbin:/bin:/usr/bin:
+  # When named runs in a chroot jail, we use an alternative directory:
+  #cd /chroot/named/var/named
+  cd /var/named
+
+  dig @a.root-servers.net . ns >named.root.new
+
+  grep "status: NOERROR" named.root.new >/dev/null 2>&1
+  if [ "$?" == "1" ]; then 
+    echo "Updating of the named.root file has failed." 
+    echo "The following _discarded_ info was retrieved:"
+    cat named.root.new
+    rm -f named.root.new
+
+  else
+
+    echo "The named.root file has been updated to contain the following information:"
+    echo
+    cat named.root.new
+
+    chown root.root named.root.new
+    chmod 444 named.root.new
+    rm -f named.root.old
+    mv named.root named.root.old
+    mv named.root.new named.root
+    /etc/rc.d/rc.bind restart
+    echo
+    echo "The nameserver has been restarted to ensure that the update is complete."
+    echo "The previous named.root file is now called /var/named/named.root.old."
+
+  fi
+
+) 2>&1 | /usr/lib/sendmail -t
+exit 0
