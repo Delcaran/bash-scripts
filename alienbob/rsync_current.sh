@@ -20,7 +20,7 @@
 # -----------------------------------------------------------------------------
 #
 VERSION=${VERSION:-current}
-TOPDIR="/home/delcaran/REPOSITORY/"
+TOPDIR="/home/ftp/pub/Linux/Slackware/"
 RSYNCURL="slackware.mirrors.tds.net::slackware"
 
 echo "Syncing version '$VERSION' ..."
@@ -31,5 +31,5 @@ if [ ! -d ${TOPDIR}/slackware-$VERSION ]; then
 fi
 
 cd ${TOPDIR}/slackware-$VERSION
-rsync $1 -vaz --delete --progress --exclude "pasture/*" ${RSYNCURL}/slackware-$VERSION/ .
+rsync $1 -vaz --delete --exclude "pasture/*" ${RSYNCURL}/slackware-$VERSION/ .
 

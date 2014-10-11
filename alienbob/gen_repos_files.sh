@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright (c) 2006-2009  Eric Hameleers, Eindhoven, The Netherlands
+# Copyright (c) 2006-2014  Eric Hameleers, Eindhoven, The Netherlands
 # All rights reserved.
 #
 #   Permission to use, copy, modify, and distribute this software for
@@ -28,7 +28,7 @@
 # ---------------------------------------------------------------------------
 cat <<"EOT"
 # -------------------------------------------------------------------#
-# $Id: gen_repos_files.sh,v 1.57 2009/05/28 10:38:58 root Exp root $ #
+# $Id: gen_repos_files.sh,v 1.92 2014/07/31 20:27:53 root Exp root $ #
 # -------------------------------------------------------------------#
 EOT
 
@@ -36,7 +36,7 @@ EOT
 BASENAME=$( basename $0 )
 
 # The script'""s revision number will be displayed in the RSS feed:
-REV=$( echo "$Revision: 1.57 $" | cut -d' '  -f2 )
+REV=$( echo "$Revision: 1.92 $" | cut -d' '  -f2 )
 
 # The repository owner's defaults file;
 # you can override any of the default values in this file:
@@ -54,10 +54,10 @@ REPOSOWNER=${REPOSOWNER:-"Eric Hameleers <alien@slackware.com>"}
 # The GPG key for the repository owner can contain a different string than
 # the value of $REPOSOWNER . If you leave $REPOSOWNERGPG empty, the script will
 # use the value you've set for $REPOSOWNER instead to search the GPG keyfile.
-REPOSOWNERGPG=${REPOSOWNER:-""}
+REPOSOWNERGPG=${REPOSOWNERGPG:-""}
 
 # Under what URL is the repository accessible:
-DL_URL=${DL_URL:-"http://www.slackware.com/~alien/slackbuilds/"}
+DL_URL=${DL_URL:-""}
 
 # The title of the generated RSS feed:
 RSS_TITLE=${RSS_TITLE:-"Alien's Slackware packages"}
@@ -94,10 +94,29 @@ USE_GPGAGENT=${USE_GPGAGENT:-0}
 # metadata files by setting FOR_SLAPTGET to "1" -- these are used by slapt-get 
 FOR_SLAPTGET=${FOR_SLAPTGET:-0}
 
+# Follow symlinks in case the repository has symlinks like 14.0 -> 13.37
+# indicating that one package works for those two Slackware releases.
+# If the script does _not_ follow symlinks, then the symlinks will appear in
+# the repository listing instead of the packages they point to.
+FOLLOW_SYMLINKS=${FOLLOW_SYMLINKS:-1}
+
+# If the repository has separate package subdirectories (for separate
+# Slackware releases or architectures) then define them here.
+# Separate FILELIST.TXT, MANIFEST etc.. files will be created for all of them:
+REPO_SUBDIRS=${REPO_SUBDIRS:-""}
+
+# If you want to exclude certain directories or files from being included
+# in the repository metadata, define them here (space-separated).
+# Example: REPO_EXCLUDES="RCS logs .genreprc"
+REPO_EXCLUDES=${REPO_EXCLUDES:-""}
+
 # ---------------------------------------------------------------------------
 
 # By default, no debug messages
 DEBUG=0
+
+# Timestamp to be used all around the script:
+UPDATEDATE="$(LC_ALL=C date -u)"
 
 # A value of "yes" means that .meta .md5 and/or .asc files are
 # always (re)generated.
@@ -105,12 +124,21 @@ DEBUG=0
 FORCEMD5="no"    # .md5 files
 FORCEPKG="no"    # .meta files
 FORCEASC="no"    # .asc files
+TOUCHUP="no"     # rsync has issues with files whose content has changed, but
+                 # both size and timestamp remain unchanged (needs expensive
+                 # '--checksum' to detect these file changes)
 # We may have a need to only update the ChangeLog files:
 RSSONLY="no"     # ChangeLog .rss and .txt
+# For a sub-repository we do not have a ChangeLog:
+CHANGELOG="yes"
 
 # Variable used to limit the search for packages which lack .md5/.asc file,
 # to those packages changed less than NOTOLDER days ago.
 NOTOLDER=""
+
+# Variable used to import the content of a text file as the new ChangeLog.txt
+# entry. If empty, you will be asked to type a new entry yourself.
+LOGINPUT=""
 
 #
 # --- no need to change anything below this line ----------------------------
@@ -128,31 +156,35 @@ PIDFILE=/var/tmp/$(basename $0 .sh).pid
 # Make sure the PID file is removed when we kill the process
 trap 'rm -f $PIDFILE; exit 1' TERM INT
 
-# Refuse to proceed if the RSS_UUID is empty:
-if [ -z "${RSS_UUID}" ]; then
-  echo "**"
-  echo "** Please supply a value for the Universally Unique IDentifier (UUID) !"
-  echo "** Look for the RSS_UUID variable inside the script or in '$USERDEFS',"
-  echo "** and (for instance) use the return value from command 'uuidgen -t'."
-  echo "**"
-  exit 1
+# Determine the prune parameters for the 'find' commands:
+PRUNES=""
+if [ -n "$REPO_EXCLUDES" ]; then
+  echo "--- Excluding: $REPO_EXCLUDES"
+  for substr in $REPO_EXCLUDES ; do
+    PRUNES="${PRUNES} -o -name ${substr} -prune "
+  done
 fi
 
 # Command line parameter processing:
-while getopts ":ahmn:prv" Option
+while getopts ":ahl:mn:prstv" Option
 do
   case $Option in
     h ) echo "Parameters are:"
         echo "  -h        : This help text"
         echo "  -a        : Force generation of .asc gpg signature files"
+        echo "  -l <log>  : Use file <log> as input for ChangeLog.txt"
         echo "  -m        : Force generation of .md5 files"
         echo "  -n <days> : Only look for packages not older than <days> days"
         echo "  -p        : Force generation of package .meta files"
         echo "  -r        : Update ChangeLog TXT and RSS files only"
+        echo "  -s        : Sub-repository: does not have ChangeLog TXT or RSS"
+        echo "  -t        : Timestamp of metafiles equal to package timestamp"
         echo "  -v        : Verbose messages about packages found"
         exit
         ;;
     a ) FORCEASC="yes"
+        ;;
+    l ) LOGINPUT="${OPTARG}"
         ;;
     m ) FORCEMD5="yes"
         ;;
@@ -161,6 +193,10 @@ do
     p ) FORCEPKG="yes"
         ;;
     r ) RSSONLY="yes"
+        ;;
+    s ) CHANGELOG="no"
+        ;;
+    t ) TOUCHUP="yes"
         ;;
     v ) DEBUG=1
         ;;
@@ -237,6 +273,13 @@ function addpkg {
   METAFILE=${NAME%t[blxg]z}meta
   TXTFILE=${NAME%t[blxg]z}txt
 
+  if [ "$FORCEPKG" == "yes" -o ! -f $LOCATION/$TXTFILE ]; then
+    # This is a courtesy service:
+    echo "--> Generating .txt file for $NAME"
+    $COMPEXE -cd $PKG | tar xOf - install/slack-desc | sed -n '/^#/d;/:/p' > $LOCATION/$TXTFILE
+    [ "$TOUCHUP" == "yes"  ] && touch -r $PKG $LOCATION/$TXTFILE || touch -d "$UPDATEDATE" $LOCATION/$TXTFILE
+  fi
+
   if [ "$FORCEPKG" == "yes" -o ! -f $LOCATION/$METAFILE ]; then
     echo "--> Generating .meta file for $NAME"
 
@@ -273,20 +316,69 @@ function addpkg {
       echo "PACKAGE SUGGESTS:  $SUGGESTS" >> $LOCATION/$METAFILE
     fi
     echo "PACKAGE DESCRIPTION:" >> $LOCATION/$METAFILE
-    $COMPEXE -cd $PKG | tar xOf - install/slack-desc | sed -n '/^#/d;/:/p' >> $LOCATION/$METAFILE
+    if [ -f $LOCATION/$TXTFILE ]; then
+      cat $LOCATION/$TXTFILE >> $LOCATION/$METAFILE
+    else
+      $COMPEXE -cd $PKG | tar xOf - install/slack-desc | sed -n '/^#/d;/:/p' >> $LOCATION/$METAFILE
+    fi
     echo "" >> $LOCATION/$METAFILE
-  fi
-  touch -r $PKG $LOCATION/$METAFILE
-
-  if [ "$FORCEPKG" == "yes" -o ! -f $LOCATION/$TXTFILE ]; then
-    # This is a courtesy service:
-    echo "--> Generating .txt file for $NAME"
-    $COMPEXE -cd $PKG | tar xOf - install/slack-desc |grep -v '^#' > $LOCATION/$TXTFILE
-    touch -r $PKG $LOCATION/$TXTFILE
+  [ "$TOUCHUP" == "yes"  ] && touch -r $PKG $LOCATION/$METAFILE || touch -d "$UPDATEDATE" $LOCATION/$METAFILE
   fi
 
-  cat $LOCATION/$METAFILE >> $PACKAGESFILE
+  # Package location may have changed:
+  sed -e "/^PACKAGE LOCATION: /s,^.*$,PACKAGE LOCATION:  $LOCATION," $LOCATION/$METAFILE >> $PACKAGESFILE
+
 } # end of function 'addpkg'
+
+#
+# addman
+#
+function addman {
+  # Add a package's content to the MANIFEST file
+  # Argument #1 : full path to a package
+  # Argument #2 : full path to MANIFEST file
+
+  if [ ! -f "$1" -o ! -f "$2" ]; then
+    echo "Required arguments '$1' and/or '$2' are invalid files!"
+    exit 1
+  fi
+  PKG=$1
+  MANIFESTFILE=$2
+
+  if [ "$(echo $PKG|grep -E '(.*{1,})\-(.*[\.\-].*[\.\-].*).t[blxg]z[ ]{0,}$')" == "" ];
+  then
+    return;
+  fi
+
+  NAME=$(echo $PKG|sed -re "s/(.*\/)(.*.t[blxg]z)$/\2/")
+  LOCATION=$(echo $PKG|sed -re "s/(.*)\/(.*.t[blxg]z)$/\1/")
+  LSTFILE=${NAME%t[blxg]z}lst
+
+  if [ "$FORCEPKG" == "yes" -o ! -f $LOCATION/$LSTFILE ]; then
+    echo "--> Generating .lst file for $NAME"
+
+    # Determine the compression tool used for this package:
+    COMPEXE=$( pkgcomp $PKG )
+
+    cat << EOF > $LOCATION/$LSTFILE
+++========================================
+||
+||   Package:  $PKG
+||
+++========================================
+EOF
+
+    $COMPEXE -cd $PKG | tar -tvvf - >> $LOCATION/$LSTFILE
+    echo "" >> $LOCATION/$LSTFILE
+    echo "" >> $LOCATION/$LSTFILE
+    [ "$TOUCHUP" == "yes"  ] && touch -r $PKG $LOCATION/$LSTFILE || touch -d "$UPDATEDATE" $LOCATION/$LSTFILE
+  fi
+
+  # Compensate for partial pathnames in .lst files found in sub-repos:
+  cat $LOCATION/$LSTFILE \
+    | sed -e "s%^||   Package:  .*$%||   Package:  $PKG%" \
+    >> $MANIFESTFILE
+} # end of function 'addman'
 
 
 #
@@ -294,19 +386,17 @@ function addpkg {
 #
 function genmd5 {
   # Generate a package's MD5SUM (*.md5 file) if missing,
-  # and add the md5sum to the CHECKSUMS.md5 file
   # Argument #1 : full path to a package
-  # Argument #2 : full path to CHECKSUMS.md5 file
 
-  if [ ! -f "$1" -o ! -f "$2" ]; then
-    echo "Required arguments '$1' and/or '$2' are invalid files!"
+  if [ ! -f "$1" ]; then
+    echo "Required argument '$1' is an invalid file!"
     exit 1
   fi
   PKG=$1
-  MD5SUMS=$2
 
   NAME=$(echo $PKG|sed -re "s/(.*\/)(.*.t[blxg]z)$/\2/")
   LOCATION=$(echo $PKG|sed -re "s/(.*)\/(.*.t[blxg]z)$/\1/")
+  BASE=${NAME%.t[blxg]z}
   MD5FILE=${NAME}.md5
 
   if [ "$FORCEMD5" == "yes" -o ! -f $LOCATION/$MD5FILE ]; then
@@ -314,11 +404,9 @@ function genmd5 {
     (cd $LOCATION
      md5sum $NAME > $MD5FILE
     )
-    touch -r $PKG $LOCATION/$MD5FILE
+    [ "$TOUCHUP" == "yes"  ] && touch -r $PKG $LOCATION/$MD5FILE || touch -d "$UPDATEDATE" $LOCATION/$MD5FILE
   fi
 
-  MD5=$(cat $LOCATION/$MD5FILE | cut -d ' ' -f 1)
-  echo "$MD5  $PKG" >> $MD5SUMS
 } # end of function 'genmd5'
 
 
@@ -345,7 +433,7 @@ function genasc {
      rm -f $ASCFILE
      gpg_sign $NAME
     )
-    touch -r $PKG $LOCATION/$ASCFILE
+    [ "$TOUCHUP" == "yes"  ] && touch -r $PKG $LOCATION/$ASCFILE || touch -d "$UPDATEDATE" $LOCATION/$ASCFILE
   fi
 
 } # end of function 'genasc'
@@ -368,16 +456,20 @@ function gen_filelist {
 
   ( cd ${DIR}
     cat <<EOT > ${LISTFILE}
-$(date -u)
+$UPDATEDATE
 
-Here is the file list for ${DL_URL} ,
+Here is the file list for ${DL_URL:-this directory} ,
 maintained by ${REPOSOWNER} .
 If you are using a mirror site and find missing or extra files
 in the subdirectories, please have the archive administrator
 refresh the mirror.
 
 EOT
-    find . | sort | xargs ls -nld >> ${LISTFILE}
+    if [ $FOLLOW_SYMLINKS -eq 1 ]; then
+      find -L . -print $PRUNES | sort | xargs ls -nld --time-style=long-iso >> ${LISTFILE}
+    else
+      find . -print $PRUNES | sort | xargs ls -nld --time-style=long-iso >> ${LISTFILE}
+    fi
   )
 } # end of function 'gen_filelist'
 
@@ -394,19 +486,23 @@ function upd_changelog {
     echo "Required argument '$1' must be an existing directory!"
     exit 1
   fi
-  DIR=$1
-  CHANGELOG=${2:-ChangeLog.txt}
+  local DIR=$1
+  local CHANGELOG=${2:-ChangeLog.txt}
   if [ -e  $DIR/$CHANGELOG -a ! -w $DIR/$CHANGELOG ]; then
     echo "Can not write to file ${DIR}/${CHANGELOG}!"
     exit 1
   fi
 
-  MAXLINE=78  # Lines will be wrapped at MAXLINE characters.
-  LOGTEXT=""
-  i=0
+  local MAXLINE=78  # Lines will be wrapped at MAXLINE characters.
+  local LOGTEXT=""
+  local i=0
 
-  # Ask for a new ChangeLog entry
-  read -er -p "Enter ChangeLog.txt description: "
+  if [ "$LOGINPUT" == "" ]; then
+    # Ask for a new ChangeLog entry
+    read -er -p "Enter ChangeLog.txt description: "
+  else
+    REPLY=$(cat "$LOGINPUT" 2>/dev/null)
+  fi
 
   if [ "$REPLY" == "" ]; then
     echo "No input, so I won't update your $CHANGELOG"
@@ -437,7 +533,7 @@ function upd_changelog {
 
   cat <<-EOT > ${DIR}/.${CHANGELOG}
 	+--------------------------+
-	$(date -u)
+	$UPDATEDATE
 	EOT
 
   for IND in $(seq 0 $i); do
@@ -457,9 +553,9 @@ function gpg_sign {
   # Create a gpg signature for a file. Use either gpg or gpg2 and optionally
   # let gpg-agent provide the passphrase.
   if [ $USE_GPGAGENT -eq 1 ]; then
-    $GPGBIN -bas --batch --quiet $1
+    $GPGBIN --use-agent -bas -u "$REPOSOWNERGPG" --batch --quiet $1
   else
-    echo $TRASK | $GPGBIN -bas --passphrase-fd 0 --batch --quiet $1
+    echo $TRASK | $GPGBIN -bas -u "$REPOSOWNERGPG" --passphrase-fd 0 --batch --quiet $1
   fi
   return $?
 }
@@ -495,11 +591,10 @@ function rss_changelog {
   UUID="$RSS_UUID"
 
   PUBDATE=""
-  LASTBUILDDATE=$(TZ=GMT date +"%a, %e %b %Y %H:%M:%S GMT")
+  LASTBUILDDATE=$(LC_ALL=C TZ=GMT date +"%a, %e %b %Y %H:%M:%S GMT")
                  # The 'date -R' RFC-2822 compliant string
                  # does not work for Thunderbird!
   counter=0
-  elines=0
 
   # Parse the input file
   cat ${INFILE} | while IFS= read cline ; do
@@ -509,7 +604,7 @@ function rss_changelog {
       # For backward compatibility, if the file starts with
       # "+--------------------------+" then we just skip that.
       [ "$cline" == "+--------------------------+" ] && read cline
-      PUBDATE=$(TZ=GMT date +"%a, %e %b %Y %H:%M:%S GMT" -d "$cline")
+      PUBDATE=$(LC_ALL=C TZ=GMT date +"%a, %e %b %Y %H:%M:%S GMT" -d "$cline")
       cat <<-_EOT_ > ${RSSFILE}
 	<?xml version="1.0" encoding="iso-8859-1"?>
 	<rss version="2.0">
@@ -527,61 +622,55 @@ function rss_changelog {
 	      <pubDate>${PUBDATE}</pubDate>
 	      <lastBuildDate>${LASTBUILDDATE}</lastBuildDate>
 	      <generator>${BASENAME} v ${REV}</generator>
+	      <item>
+	         <title>${PUBDATE}</title>
+	         <link>${CLURL}</link>
+	         <pubDate>${PUBDATE}</pubDate>
+	         <guid isPermaLink="false">$(LC_ALL=C date -d "${PUBDATE}" +%Y%m%d%H%M%S)</guid>
+	         <description>
+	           <![CDATA[<pre>
 	_EOT_
     elif [ "$cline" == "+--------------------------+" ]; then
-      # Start of a new entry; dump the previous one
+      # This line masrks the start of a new entry.
+      # Only dump a certain amount of recent entries.
+      [ $counter -gt $FEEDMAX ] && break
+
+      # Close the previous entry:
+      cat <<-_EOT_ >> ${RSSFILE}
+	           </pre>]]>
+	         </description>
+	      </item>
+	_EOT_
+
+      # Next line is the pubdate for the next entry:
+      read PUBDATE
+      PUBDATE=$(LC_ALL=C TZ=GMT date +"%a, %e %b %Y %H:%M:%S GMT" -d "$PUBDATE")
+
+      # Write the header for the next entry:
       cat <<-_EOT_ >> ${RSSFILE}
 	      <item>
 	         <title>${PUBDATE}</title>
 	         <link>${CLURL}</link>
+	         <pubDate>${PUBDATE}</pubDate>
+	         <guid isPermaLink="false">$(LC_ALL=C date -d "${PUBDATE}" +%Y%m%d%H%M%S)</guid>
 	         <description>
 	           <![CDATA[<pre>
 	_EOT_
-      for i in $(seq 0 $elines); do
-        [ "${ENTRY[$i]}" != "" ] && echo "${ENTRY[$i]}" >> ${RSSFILE}
-      done
-      cat <<-_EOT_ >> ${RSSFILE}
-	           </pre>]]>
-	         </description>
-	         <pubDate>${PUBDATE}</pubDate>
-	         <guid isPermaLink="false">$(date -d "${PUBDATE}" +%Y%m%d%H%M%S)</guid>
-	      </item>
-	_EOT_
-      # Next line is the pubdate
-      read PUBDATE
-      PUBDATE=$(TZ=GMT date +"%a, %e %b %Y %H:%M:%S GMT" -d "$PUBDATE")
-      unset ENTRY
-      elines=0
+
       counter=$(( ${counter}+1 ))
-      # Only dump a certain amount of recent entries.
-      [ $counter -gt $FEEDMAX ] && break
     else
       # Add a line of description
-      ENTRY[$elines]="$cline"
-      elines=$(( ${elines}+1 ))
+      [ "${cline}" != "" ] && echo "${cline}" >> ${RSSFILE}
     fi
   done
 
-  if [ ${elines} -ne 0 ]; then
-    # We have a last entry in store (means we have less than FEEDMAX)
-    cat <<-_EOT_ >> ${RSSFILE}
-	      <item>
-	         <title>${PUBDATE}</title>
-	         <link>${CLURL}</link>
-	         <description>
-	           <![CDATA[<pre>
-	_EOT_
-      for i in $(seq 0 $elines); do
-        [ "${ENTRY[$i]}" != "" ] && echo "            ${ENTRY[$i]}" >> ${RSSFILE}
-      done
-      cat <<-_EOT_ >> ${RSSFILE}
+  # Close the last entry:
+  cat <<-_EOT_ >> ${RSSFILE}
 	           </pre>]]>
 	         </description>
-	         <pubDate>${PUBDATE}</pubDate>
 	      </item>
 	_EOT_
-  fi
-	
+
   # Close the XML output:
   cat <<-_EOT_ >> ${RSSFILE}
 	   </channel>
@@ -590,9 +679,143 @@ function rss_changelog {
 }
 
 #
+# run_repo
+#
+run_repo() {
+  # Run through a repository tree, generating the repo meta files.
+
+  # Change directory to the root of the repository, so all generated
+  # information is relative to here:
+  local RDIR=$1
+
+  cd $RDIR
+
+  # Create temporary MANIFEST and PACKAGES.TXT files:
+  cat /dev/null > .MANIFEST
+  cat /dev/null > .PACKAGES.TXT
+
+  # This tries to look for filenames with the Slackware package name format:
+  if [ $FOLLOW_SYMLINKS -eq 1 ]; then
+    PKGS=$( find -L . -type f -name '*-*-*-*.t[blxg]z' -print $PRUNES | sort )
+  else
+    PKGS=$( find . -type f -name '*-*-*-*.t[blxg]z' -print $PRUNES | sort )
+  fi
+  for pkg in $PKGS; do
+    # Found a filename with matching format, is it really a slackpack?
+    COMPEXE=$( pkgcomp $pkg )
+    if $COMPEXE -cd $pkg | tar tOf - install/slack-desc 1>/dev/null 2>&1 ; then
+      [ $DEBUG -eq 1 ] && echo "+++ Found package $pkg"
+      # We need to run addpkg for every package, to populate PACKAGES.TXT:
+      addpkg $pkg ${RDIR}/.PACKAGES.TXT
+
+      # We need to run addman for every package, to populate MANIFEST
+      addman $pkg ${RDIR}/.MANIFEST
+
+      if [ "x$NOTOLDER" != "x" ]; then
+        # When to generate md5sum/gpg signature if we have a $NOTOLDER value:
+        # 'date +%s' gives the current time in seconds since the Epoch;
+        # 'stat -c %Z $pkg' gives the ctime of $pkg file in seconds since Epoch;
+        # The difference of these two divided by 3600 is the file age in hours.
+        # '24 * $NOTOLDER' gives the maximum allowed age of the file in hours.
+        # If the package is too old, we do not try to create md5sum/gpg sig.
+        if [ $(( ( $(LC_ALL=C date +%s) - $(stat -c %Z $pkg) ) / 3600 )) -lt $(( 24 * $NOTOLDER )) ]; then
+          [ "$USEGPG" == "yes" ] && genasc $pkg
+          genmd5 $pkg
+        else
+          [ $DEBUG -eq 1 ] && echo "  - Skipping md5/gpg calculation for $(basename $pkg)"
+        fi
+      else
+        [ "$USEGPG" == "yes" ] && genasc $pkg
+        genmd5 $pkg
+      fi
+    else
+      echo "*** Warning: $pkg does not contain a slack-desc file. ***"
+    fi
+  done
+
+  # Make the changes visible:
+  echo "PACKAGES.TXT;  $UPDATEDATE" > PACKAGES.TXT
+  echo "" >> PACKAGES.TXT
+  if [ -n "$DL_URL" ]; then
+    cat .PACKAGES.TXT >> PACKAGES.TXT
+  else
+    cat .PACKAGES.TXT | grep -v "PACKAGE MIRROR: " >> PACKAGES.TXT
+  fi
+  rm -f .PACKAGES.TXT
+  cat .MANIFEST > MANIFEST
+  rm -f .MANIFEST
+  
+  bzip2 -9f MANIFEST
+  gzip -9cf PACKAGES.TXT > PACKAGES.TXT.gz
+  if [ "${CHANGELOG}" == "yes" -a -f ChangeLog.txt ]; then
+    gzip -9cf ChangeLog.txt > ChangeLog.txt.gz
+  fi
+
+} # End run_repo()
+
+
+#
+# gen_checksums
+#
+gen_checksums() {
+  # Run through a repository tree, generating the checksum files.
+
+  # Change directory to the root of the repository, so all generated
+  # information is relative to here:
+  local RDIR=$1
+
+  cd $RDIR
+
+  # Create temporary CHECKSUMS.md5 file:
+  cat /dev/null > .CHECKSUMS.md5
+
+  # Generate the overall CHECKSUMS.md5 for this (sub-)repo:
+  cat << EOF > .CHECKSUMS.md5
+These are the MD5 message digests for the files in this directory.
+If you want to test your files, use 'md5sum' and compare the values to
+the ones listed here.
+
+To test all these files, use this command:
+
+tail +13 CHECKSUMS.md5 | md5sum --check | less
+
+'md5sum' can be found in the GNU coreutils package on ftp.gnu.org in
+/pub/gnu, or at any GNU mirror site.
+
+MD5 message digest                Filename
+EOF
+  if [ $FOLLOW_SYMLINKS -eq 1 ]; then
+    find -L . -type f -print $PRUNES | grep -v CHECKSUMS | sort | xargs md5sum $1 2>/dev/null >> .CHECKSUMS.md5
+  else
+    find . -type f -print $PRUNES | grep -v CHECKSUMS | sort | xargs md5sum $1 2>/dev/null >> .CHECKSUMS.md5
+  fi
+  cat .CHECKSUMS.md5 > CHECKSUMS.md5
+  gzip -9cf CHECKSUMS.md5 > CHECKSUMS.md5.gz
+
+  rm -f .CHECKSUMS.md5 CHECKSUMS.md5.asc CHECKSUMS.md5.gz.asc
+
+  if [ "$USEGPG" == "yes" ]; then
+    # The CHECKSUMS.md5* files need a gpg signature:
+    gpg_sign CHECKSUMS.md5
+    gpg_sign CHECKSUMS.md5.gz
+  fi
+
+} # End gen_checksums()
+
+
+#
 # --- MAIN ------------------------------------------------------------------
 #
 
+# Abort if we need to create the RSS file and RSS_UUID is empty:
+if [ -z "${RSS_UUID}" -a "${CHANGELOG}" = "yes" ]; then
+  echo "**"
+  echo "** Please supply a value for the Universally Unique IDentifier (UUID) !"
+  echo "** Look for the RSS_UUID variable inside the script or in '$USERDEFS',"
+  echo "** and (for instance) use the return value from command 'uuidgen -t'."
+  echo "**"
+  exit 1
+fi
 
 echo "--- Generating repository metadata for $REPOSROOT ---"
 echo "--- Repository owner is $REPOSOWNER ---"
@@ -602,18 +825,19 @@ echo ""
 #  you want to use for the repository owner, set the REPOSOWNERGPG variable.
 # If $REPOSOWNERGPG has an empty value we will use the value of $REPOSOWNER
 #  to search the GPG keyring.
-if [ "${REPOSOWNERGPG}" == "" ]; then
+if [ "x${REPOSOWNERGPG}" == "x" ]; then
   REPOSOWNERGPG="${REPOSOWNER}"
 fi
 
 # We will test correctness of the GPG passphrase against a temp file:
 TESTTMP=$(mktemp)
 
-# Update ChangeLog.txt with a new entry
-upd_changelog $REPOSROOT
-
-# Write a RSS file for the ChangeLog.txt
-rss_changelog $REPOSROOT
+if [ "${CHANGELOG}" == "yes" ]; then
+  # Update ChangeLog.txt with a new entry
+  upd_changelog $REPOSROOT
+  # Write a RSS file for the ChangeLog.txt
+  rss_changelog $REPOSROOT
+fi
 
 # If we only want to update the ChangeLog files, then we skip a lot:
 if [ "$RSSONLY" = "yes" ]; then
@@ -646,82 +870,47 @@ else
       echo "GPG test failed, incorrect GPG passphrase? Aborting the script."
       rm -f $TESTTMP
       exit 1
-    elif [ ! -r ${REPOSROOT}/GPG-KEY ]; then
-      echo "Generating a "GPG-KEY" file in '$REPOSROOT',"
-      echo "   containing the public key information for '$REPOSOWNERGPG'..."
-      $GPGBIN --list-keys "$REPOSOWNERGPG" > ${REPOSROOT}/GPG-KEY
-      $GPGBIN -a --export "$REPOSOWNERGPG" >> ${REPOSROOT}/GPG-KEY
-      chmod 444 ${REPOSROOT}/GPG-KEY
-    fi
-  fi
-
-  # Change directory to the root of the repository, so all generated
-  # information is relative to here:
-  cd $REPOSROOT
-
-  # Create temporary PACKAGES.TXT and CHECKSUMS.md5 files:
-  cat /dev/null > .PACKAGES.TXT
-  cat /dev/null > .CHECKSUMS.md5
-
-  # This tries to look for filenames with the Slackware package name format:
-  PKGS=$( find . -type f -name '*-*-*-*.t[blxg]z' -print | sort )
-  for pkg in $PKGS; do
-    # Found a filename with matching format, is it really a slackpack?
-    COMPEXE=$( pkgcomp $pkg )
-    if $COMPEXE -cd $pkg | tar tOf - install/slack-desc 1>/dev/null 2>&1 ; then
-      [ $DEBUG -eq 1 ] && echo "+++ Found package $pkg"
-      # We need to run addpkg for every single package, to populate PACKAGES.TXT:
-      addpkg $pkg ${REPOSROOT}/.PACKAGES.TXT
-      if [ "x$NOTOLDER" != "x" ]; then
-        # When to generate md5sum/gpg signature if we have a $NOTOLDER value:
-        # 'date +%s' gives the current time in seconds since the Epoch;
-        # 'stat -c %Z $pkg' gives the ctime of $pkg file in seconds since Epoch;
-        # The difference of these two divided by 3600 is the file age in hours.
-        # '24 * $NOTOLDER' gives the maximum allowed age of the file in hours.
-        # If the package is too old, we do not try to create md5sum/gpg sig.
-        if [ $(( ( $(date +%s) - $(stat -c %Z $pkg) ) / 3600 )) -lt $(( 24 * $NOTOLDER )) ]; then
-          genmd5 $pkg ${REPOSROOT}/.CHECKSUMS.md5
-          [ "$USEGPG" == "yes" ] && genasc $pkg
-        else
-          [ $DEBUG -eq 1 ] && echo "  - Skipping md5/gpg calculation for $(basename $pkg)"
-        fi
-      else
-        genmd5 $pkg ${REPOSROOT}/.CHECKSUMS.md5
-        [ "$USEGPG" == "yes" ] && genasc $pkg
-      fi
     else
-      echo "*** Warning: $pkg does not contain a slack-desc file. ***"
+      if [ ! -r ${REPOSROOT}/GPG-KEY ]; then
+        echo "Generating a "GPG-KEY" file in '$REPOSROOT',"
+        echo "  containing the public key information for '$REPOSOWNERGPG'..."
+        $GPGBIN --list-keys "$REPOSOWNERGPG" > ${REPOSROOT}/GPG-KEY
+        $GPGBIN -a --export "$REPOSOWNERGPG" >> ${REPOSROOT}/GPG-KEY
+        chmod 444 ${REPOSROOT}/GPG-KEY
+      fi
+      if [ -n "$REPO_SUBDIRS" ]; then
+        for SUBDIR in $REPO_SUBDIRS ; do
+          if [ ! -r ${REPOSROOT}/${SUBDIR}/GPG-KEY ]; then
+            echo "Generating a "GPG-KEY" file in '$REPOSROOT/$SUBDIR',"
+            echo "  containing the public key information for '$REPOSOWNERGPG'."
+            $GPGBIN --list-keys "$REPOSOWNERGPG" > $REPOSROOT/$SUBDIR/GPG-KEY
+            $GPGBIN -a --export "$REPOSOWNERGPG" >> $REPOSROOT/$SUBDIR/GPG-KEY
+            chmod 444 ${REPOSROOT}/${SUBDIR}/GPG-KEY
+          fi
+        done
+      fi
     fi
-  done
-
-  # Make the changes visible:
-  echo "PACKAGES.TXT;  $(date -u)" > PACKAGES.TXT
-  echo "" >> PACKAGES.TXT
-  cat .PACKAGES.TXT >> PACKAGES.TXT
-  cat .CHECKSUMS.md5 > CHECKSUMS.md5
-  
-  gzip -9cf PACKAGES.TXT > PACKAGES.TXT.gz
-  gzip -9cf CHECKSUMS.md5 > CHECKSUMS.md5.gz
-  gzip -9cf ChangeLog.txt > ChangeLog.txt.gz
-
-  rm -f CHECKSUMS.md5.asc CHECKSUMS.md5.gz.asc
-
-  if [ "$USEGPG" == "yes" ]; then
-    # The CHECKSUMS.md5* files need a gpg signature:
-    gpg_sign CHECKSUMS.md5
-    gpg_sign CHECKSUMS.md5.gz
   fi
 
-  # Clean up:
-  rm -f .PACKAGES.TXT
-  rm -f .CHECKSUMS.md5
-  TRASK=""
+  # Run through the repository, generating the MANIFEST etc:
+  if [ -n "$REPO_SUBDIRS" ]; then
+    echo "--- Populating repo subdirectories '${REPO_SUBDIRS}' ---"
+    for SUBDIR in $REPO_SUBDIRS ; do
+      run_repo $REPOSROOT/$SUBDIR
+      gen_filelist ${REPOSROOT}/$SUBDIR
+      gen_checksums ${REPOSROOT}/$SUBDIR
+    done
+  fi
+  run_repo $REPOSROOT
+
 fi # end !RSSONLY
 
-# Finally, generate the FILELIST.TXT:
+# Finally, generate the FILELIST.TXT and CHECKSUMS.md5* for the whole repo:
 gen_filelist ${REPOSROOT}
+gen_checksums ${REPOSROOT}
 
-# Clean up test files:
+# Clean up:
+TRASK=""
 rm -f ${TESTTMP}*
 
 # Done.

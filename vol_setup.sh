@@ -2,6 +2,7 @@
 LEVEL=2
 COMMAND=""
 PCMCOMMAND=""
+CHANNELCHECK="Master"
 
 case "$1" in
     "+") 
@@ -13,13 +14,13 @@ case "$1" in
         PCMCOMMAND="$COMMAND"
         ;;
     "m") 
-        if [ "`/usr/bin/amixer -c 0 sget 'PCM' | grep 100%`" ]
+        if [ "`/usr/bin/amixer -c 0 sget ${CHANNELCHECK} | grep off`" ]
         then
-            COMMAND="mute"
-            PCMCOMMAND="0%"
-        else
             COMMAND="unmute"
             PCMCOMMAND="100%"
+        else
+            COMMAND="mute"
+            PCMCOMMAND="0%"
         fi
         ;;
     *) exit 0 ;;

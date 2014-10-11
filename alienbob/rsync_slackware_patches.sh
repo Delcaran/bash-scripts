@@ -1,5 +1,5 @@
 #!/bin/sh
-# $Id: rsync_slackware_patches.sh,v 1.18 2009/09/09 08:17:45 root Exp root $
+# $Id: rsync_slackware_patches.sh,v 1.21 2013/05/04 18:43:13 root Exp root $
 #-----------------------------------------------------------------------------
 # Program name:
 #   rsync_slackware_patches.sh
@@ -104,7 +104,7 @@ VERSION=${VERSION:-${SLACKDEF}}
 if [ $SHOWHELP -eq 1 ]; then
   cat <<-"EOH"
 	-----------------------------------------------------------------
-	$Id: rsync_slackware_patches.sh,v 1.18 2009/09/09 08:17:45 root Exp root $
+	$Id: rsync_slackware_patches.sh,v 1.21 2013/05/04 18:43:13 root Exp root $
 	-----------------------------------------------------------------
 	EOH
   echo "[$BN:] Parameters are:"
@@ -163,8 +163,10 @@ cat ChangeLog.txt > $TMPFILE 2>/dev/null
 
 [ ${VERBOSE} -eq 1 ] && echo "[$BN:] Here we go... using master '${RSYNCHOST}'"
 
-rsync ${RSYNCOPTS} ${RSYNCVERBOSE} -az --delete ${RSYNCHOST}/$SLACKDIR-$VERSION/ChangeLog.txt .
-rsync ${RSYNCOPTS} ${RSYNCVERBOSE} -az ${KEEPOPTS} ${RSYNCHOST}/$SLACKDIR-$VERSION/patches .
+rsync ${RSYNCOPTS} ${RSYNCVERBOSE} -a --delete ${RSYNCHOST}/$SLACKDIR-$VERSION/ChangeLog.txt .
+rsync ${RSYNCOPTS} ${RSYNCVERBOSE} -a --delete ${RSYNCHOST}/$SLACKDIR-$VERSION/FILELIST.TXT .
+rsync ${RSYNCOPTS} ${RSYNCVERBOSE} -a --delete ${RSYNCHOST}/$SLACKDIR-$VERSION/CHECKSUMS.md5* .
+rsync ${RSYNCOPTS} ${RSYNCVERBOSE} -a ${KEEPOPTS} ${RSYNCHOST}/$SLACKDIR-$VERSION/patches .
 
 [ ${VERBOSE} -eq 1 ] && echo "[$BN:] Exit status: $?"
 [ ${VERBOSE} -eq 1 ] && echo "[$BN:] Done rsync-ing."
@@ -189,3 +191,4 @@ rm -f $TMPFILE
 
 [ ${VERBOSE} -eq 1 ] && echo "[$BN:] Done!"
 
+exit 0
