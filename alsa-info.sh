@@ -1,6 +1,6 @@
 #!/bin/bash
 
-SCRIPT_VERSION=0.4.62
+SCRIPT_VERSION=0.4.64
 CHANGELOG="http://www.alsa-project.org/alsa-info.sh.changelog"
 
 #################################################################################
@@ -246,7 +246,7 @@ withdmesg() {
 	echo "!!ALSA/HDA dmesg" >> $FILE
 	echo "!!--------------" >> $FILE
 	echo "" >> $FILE
-	dmesg | grep -C1 -E 'ALSA|HDA|HDMI|sound|hda.codec|hda.intel' >> $FILE
+	dmesg | grep -C1 -E 'ALSA|HDA|HDMI|snd[_-]|sound|hda.codec|hda.intel' >> $FILE
 	echo "" >> $FILE
 	echo "" >> $FILE
 }
@@ -260,6 +260,7 @@ withall() {
 	withlsmod
 	withsysfs
 	withdmesg
+	WITHALL="no"
 }
 
 get_alsa_library_version() {
@@ -393,8 +394,10 @@ trap cleanup 0
 if [ "$PROCEED" = "yes" ]; then
 
 if [ -z "$LSPCI" ]; then
-	echo "This script requires lspci. Please install it, and re-run this script."
-	exit 0
+	if [ -d /sys/bus/pci ]; then
+		echo "This script requires lspci. Please install it, and re-run this script."
+		exit 0
+	fi
 fi
 
 #Fetch the info and store in temp files/variables
@@ -407,8 +410,6 @@ KERNEL_OS=`uname -o`
 ALSA_DRIVER_VERSION=`cat /proc/asound/version |head -n1|awk {'print $7'} |sed 's/\.$//'`
 get_alsa_library_version
 ALSA_UTILS_VERSION=`amixer -v |awk {'print $3'}`
-VENDOR_ID=`lspci -vn | grep 040[1-3] | awk -F':' '{print $3}'| awk {'print substr($0, 2);}' >$TEMPDIR/vendor_id.tmp`
-DEVICE_ID=`lspci -vn | grep 040[1-3] | awk -F':' '{print $4}'| awk {'print $1'} >$TEMPDIR/device_id.tmp`
 LAST_CARD=$((`grep "]: " /proc/asound/cards | wc -l` - 1 ))
 
 ESDINST=$(which esd 2>/dev/null| sed 's|^[^/]*||' 2>/dev/null)
@@ -434,7 +435,9 @@ fi
 
 cat /proc/asound/modules 2>/dev/null|awk {'print $2'}>$TEMPDIR/alsamodules.tmp
 cat /proc/asound/cards >$TEMPDIR/alsacards.tmp
+if [[ ! -z "$LSPCI" ]]; then
 lspci |grep -i "multi\|audio">$TEMPDIR/lspci.tmp
+fi
 
 #Check for HDA-Intel cards codec#*
 cat /proc/asound/card*/codec\#* > $TEMPDIR/alsa-hda-intel.tmp 2> /dev/null
@@ -547,6 +550,8 @@ echo "" >> $FILE
 cat $TEMPDIR/alsacards.tmp >> $FILE
 echo "" >> $FILE
 echo "" >> $FILE
+
+if [[ ! -z "$LSPCI" ]]; then
 echo "!!PCI Soundcards installed in the system" >> $FILE
 echo "!!--------------------------------------" >> $FILE
 echo "" >> $FILE
@@ -559,6 +564,7 @@ echo "" >> $FILE
 lspci -vvn |grep -A1 040[1-3] >> $FILE
 echo "" >> $FILE
 echo "" >> $FILE
+fi
 
 if [ "$SNDOPTIONS" ]
 then
@@ -624,7 +630,6 @@ fi
 #If no command line options are specified, then run as though --with-all was specified
 if [ -z "$1" ]; then
 	update
-	withall
 	pbcheck	
 fi
 
@@ -637,7 +642,6 @@ if [ -n "$1" ]; then
 	case "$1" in
 		--pastebin)
 		        update
-			withall
         		pbcheck
 			;;
 		--update)
@@ -646,11 +650,9 @@ if [ -n "$1" ]; then
 			;;
 		--upload)
 			UPLOAD="yes"
-			withall
 			;;
 		--no-upload)
 			UPLOAD="no"
-			withall
 			;;
 		--output)
 			shift
@@ -661,27 +663,32 @@ if [ -n "$1" ]; then
 			echo "Debugging enabled. $FILE and $TEMPDIR will not be deleted"
 			KEEP_FILES="yes"
 			echo ""
-			withall
 			;;
 		--with-all)
 			withall
 			;;
 		--with-aplay)
 			withaplay
+			WITHALL="no"
 			;;
 		--with-amixer)
 			withamixer
+			WITHALL="no"
 			;;
 		--with-alsactl)
 			withalsactl
+			WITHALL="no"
 			;;
 		--with-devices)
 			withdevices
+			WITHALL="no"
 			;;
 		--with-dmesg)
 			withdmesg
+			WITHALL="no"
 			;;
 		--with-configs)
+			WITHALL="no"
 			if [[ -e $HOME/.asoundrc ]] || [[ -e /etc/asound.conf ]]
 			then
 				echo "!!ALSA configuration files" >> $FILE
@@ -711,7 +718,9 @@ if [ -n "$1" ]; then
 			;;
 		--stdout)
 			UPLOAD="no"
-			withall
+			if [ -z "$WITHALL" ]; then
+				withall
+			fi
 			cat $FILE
 			rm $FILE
 			;;
@@ -758,6 +767,10 @@ fi
 
 if [ "$PROCEED" = "no" ]; then
 	exit 1
+fi
+
+if [ -z "$WITHALL" ]; then
+	withall
 fi
 
 if [ "$UPLOAD" = "ask" ]; then
