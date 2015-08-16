@@ -7,7 +7,6 @@ from os.path import isfile, join
 
 dirRepo = "/home/delcaran/Slackware/SBo"
 
-
 mypkg = {}
 
 for x in range(2):
