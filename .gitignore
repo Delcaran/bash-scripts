@@ -1,2 +1,4 @@
 config.sh
 backup.sh
+*~
+*.log
