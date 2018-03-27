@@ -1,6 +1,6 @@
 #!/bin/sh
 SERVICE='i3'
-DIR="/home/delcaran/Dropbox/Wallpapers/"
+DIR="/home/delcaran/Pictures/Wallpapers/"
 DISPLAY=:0
 if ps ax | grep -v grep | grep $SERVICE > /dev/null
 then
