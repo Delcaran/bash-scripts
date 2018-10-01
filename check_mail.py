@@ -42,24 +42,6 @@ import imaplib
 import config
 import string
 
-def print_line(message):
-    """ Non-buffered printing to stdout. """
-    sys.stdout.write(message + '\n')
-    sys.stdout.flush()
-
-def read_line():
-    """ Interrupted respecting reader for stdin. """
-    # try reading a line, removing any extra whitespace
-    try:
-        line = sys.stdin.readline().strip()
-        # i3status sends EOF, or an empty line
-        if not line:
-            sys.exit(3)
-        return line
-    # exit on ctrl-c
-    except KeyboardInterrupt:
-        sys.exit()
-
 def check_mail(user, password, colors):
     """ Check mail in mailbox "label" and return report and color """
     mail = imaplib.IMAP4_SSL('imap.gmail.com')
@@ -84,45 +66,24 @@ def check_mail(user, password, colors):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Check mailboxes.')
     parser.add_argument('-i', '--ignore', action='append', help='ignore named mailboxes', type=str, dest='ignore', metavar='mailbox')
-    parser.add_argument('-1', '--once', help='check mailboxes, write results to stdout and exit', action='store_true')
     parser.add_argument('-0', '--nomail', help='text to print if no new mail found', type=str, default='')
     parser.add_argument('-g', '--good', help='color to use when there is no new mail', type=str, default='#00FF00')
     parser.add_argument('-d', '--degraded', help='color to use when there is new mail', type=str, default='#FFFF00')
     parser.add_argument('-b', '--bad', help='color to use when error was detected', type=str, default='#FF0000')
-    parser.add_argument('-p', '--position', help='position of mail reports in i3bar status', type=int, default=0)
     args = parser.parse_args()
 
     colors = [args.good, args.degraded, args.bad]
-
-    if args.once:
-        for mailbox in config.mailboxes:
-            report, color = check_mail(mailbox["user"], mailbox["password"], colors)
-            sys.stderr.write(report + '\n')
-        exit(0)
-
-    # Skip the first line which contains the version header.
-    print_line(read_line())
-
-    # The second line contains the start of the infinite array.
-    print_line(read_line())
-
-    while True:
-        line, prefix = read_line(), ''
-        # ignore comma at start of lines
-        if line.startswith(','):
-            line, prefix = line[1:], ','
-
-        j = json.loads(line)
-        # insert information into the start of the json
-        i = args.position
-        for mailbox in config.mailboxes:
-            report, color = check_mail(mailbox["user"], mailbox["password"], colors)
-            j.insert(i, {
-                    'name' : 'mail',
-                    'instance' : mailbox["user"],
-                    'full_text' : report,
-                    'color' : color
-                        })
-            i += 1
-        # and echo back new encoded json
-        print_line(prefix+json.dumps(j))
+    output = ""
+    for mailbox in config.mailboxes:
+        report, color = check_mail(mailbox["user"], mailbox["password"], colors)
+        output += json.dumps({
+                'name' : 'mail',
+                'instance' : mailbox["user"],
+                'full_text' : report,
+                'color' : color
+                    })
+        output += '\n'
+    f = open(config.mail_output, "w+")
+    f.write(output)
+    f.close()
+    exit(0)
